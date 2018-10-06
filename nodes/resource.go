@@ -5,8 +5,8 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/ResourceAPI/Core/database"
-	"github.com/ResourceAPI/Core/database/filters"
+	"github.com/ResourceAPI/Core/resource"
+
 	"github.com/ResourceAPI/Core/schema"
 	"github.com/Vilsol/GoLib"
 	"github.com/gorilla/mux"
@@ -19,21 +19,22 @@ func RegisterResourceRoutes(router GoLib.RegisterRoute) {
 }
 
 func getResource(r *http.Request) (interface{}, *GoLib.ErrorResponse) {
-	resource := mux.Vars(r)["resource"]
+	resourceName := mux.Vars(r)["resource"]
 
-	if !schema.ResourceExists(resource) {
+	if !schema.ResourceExists(resourceName) {
 		return nil, &ErrorResourceDoesNotExist
 	}
 
 	// TODO Filters
-
-	return database.Get().GetResources(resource, []filters.Filter{}), nil
+	// TODO Error handling
+	resources, _ := (*resource.GetStore(resourceName)).GetResources(resourceName, nil)
+	return resources, nil
 }
 
 func storeResource(r *http.Request) (interface{}, *GoLib.ErrorResponse) {
-	resource := mux.Vars(r)["resource"]
+	resourceName := mux.Vars(r)["resource"]
 
-	if !schema.ResourceExists(resource) {
+	if !schema.ResourceExists(resourceName) {
 		return nil, &ErrorResourceDoesNotExist
 	}
 
@@ -42,7 +43,7 @@ func storeResource(r *http.Request) (interface{}, *GoLib.ErrorResponse) {
 		return nil, &ErrorCouldNotReadBody
 	}
 
-	valid, err := schema.ResourceValid(resource, string(body))
+	valid, err := schema.ResourceValid(resourceName, string(body))
 
 	if !valid {
 		resp := ErrorResourceInvalid
@@ -53,7 +54,7 @@ func storeResource(r *http.Request) (interface{}, *GoLib.ErrorResponse) {
 	var data map[string]interface{}
 	json.Unmarshal(body, &data)
 
-	database.Get().StoreResources(resource, []map[string]interface{}{data})
+	(*resource.GetStore(resourceName)).CreateResources(resourceName, []map[string]interface{}{data})
 
 	return nil, nil
 }
