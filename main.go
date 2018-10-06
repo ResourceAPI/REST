@@ -12,7 +12,7 @@ func (RESTPlugin) Name() string {
 }
 
 func (RESTPlugin) Entrypoint() {
-	plugins.RegisterFacade("rest", &server.RESTFacade{})
+	plugins.RegisterFacade("REST", &server.RESTFacade{})
 }
 
 var CorePlugin RESTPlugin
