@@ -26,7 +26,6 @@ func getResource(r *http.Request) (interface{}, *GoLib.ErrorResponse) {
 	}
 
 	// TODO Filters
-	// TODO Error handling
 	resources, _ := (*resource.GetStore(resourceName)).GetResources(resourceName, nil)
 	return resources, nil
 }
@@ -54,6 +53,7 @@ func storeResource(r *http.Request) (interface{}, *GoLib.ErrorResponse) {
 	var data map[string]interface{}
 	json.Unmarshal(body, &data)
 
+	// TODO Filters
 	(*resource.GetStore(resourceName)).CreateResources(resourceName, []map[string]interface{}{data})
 
 	return nil, nil
