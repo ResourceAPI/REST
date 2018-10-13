@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/ResourceAPI/Core/plugins"
+	"github.com/ResourceAPI/Interface/plugins"
 	"github.com/ResourceAPI/REST/server"
 )
 
@@ -12,7 +12,7 @@ func (RESTPlugin) Name() string {
 }
 
 func (RESTPlugin) Entrypoint() {
-	plugins.RegisterFacade("REST", &server.RESTFacade{})
+	plugins.GetRegistry().RegisterFacade("REST", &server.RESTFacade{})
 }
 
 var CorePlugin RESTPlugin

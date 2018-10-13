@@ -5,9 +5,8 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/ResourceAPI/Core/resource"
-
-	"github.com/ResourceAPI/Core/schema"
+	"github.com/ResourceAPI/Interface/resource"
+	"github.com/ResourceAPI/Interface/schema"
 	"github.com/Vilsol/GoLib"
 	"github.com/gorilla/mux"
 )
@@ -21,19 +20,19 @@ func RegisterResourceRoutes(router GoLib.RegisterRoute) {
 func getResource(r *http.Request) (interface{}, *GoLib.ErrorResponse) {
 	resourceName := mux.Vars(r)["resource"]
 
-	if !schema.ResourceExists(resourceName) {
+	if !schema.GetProcessor().ResourceExists(resourceName) {
 		return nil, &ErrorResourceDoesNotExist
 	}
 
 	// TODO Filters
-	resources, _ := (*resource.GetStore(resourceName)).GetResources(resourceName, nil)
+	resources, _ := (*resource.GetProcessor().GetStore(resourceName)).GetResources(resourceName, nil)
 	return resources, nil
 }
 
 func storeResource(r *http.Request) (interface{}, *GoLib.ErrorResponse) {
 	resourceName := mux.Vars(r)["resource"]
 
-	if !schema.ResourceExists(resourceName) {
+	if !schema.GetProcessor().ResourceExists(resourceName) {
 		return nil, &ErrorResourceDoesNotExist
 	}
 
@@ -42,7 +41,7 @@ func storeResource(r *http.Request) (interface{}, *GoLib.ErrorResponse) {
 		return nil, &ErrorCouldNotReadBody
 	}
 
-	valid, err := schema.ResourceValid(resourceName, string(body))
+	valid, err := schema.GetProcessor().ResourceValid(resourceName, string(body))
 
 	if !valid {
 		resp := ErrorResourceInvalid
@@ -54,7 +53,7 @@ func storeResource(r *http.Request) (interface{}, *GoLib.ErrorResponse) {
 	json.Unmarshal(body, &data)
 
 	// TODO Filters
-	(*resource.GetStore(resourceName)).CreateResources(resourceName, []map[string]interface{}{data})
+	(*resource.GetProcessor().GetStore(resourceName)).CreateResources(resourceName, []map[string]interface{}{data})
 
 	return nil, nil
 }

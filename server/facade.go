@@ -5,7 +5,6 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/ResourceAPI/Core/config"
 	"github.com/ResourceAPI/REST/nodes"
 	"github.com/Vilsol/GoLib"
 	"github.com/gorilla/handlers"
@@ -41,8 +40,9 @@ func (facade *RESTFacade) Initialize() error {
 
 // Start the facade. Must be a blocking call.
 func (facade *RESTFacade) Start() error {
-	fmt.Printf("REST server listening on port %d\n", config.Get().Port)
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", config.Get().Port), facade.router))
+	// TODO Per-Plugin Configs
+	fmt.Printf("REST server listening on port %d\n", 5020)
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", 5020), facade.router))
 	return nil
 }
 
