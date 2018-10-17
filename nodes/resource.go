@@ -5,8 +5,8 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/ResourceAPI/Interface/resource"
-	"github.com/ResourceAPI/Interface/schema"
+	"github.com/StratoAPI/Interface/resource"
+	"github.com/StratoAPI/Interface/schema"
 	"github.com/Vilsol/GoLib"
 	"github.com/gorilla/mux"
 )

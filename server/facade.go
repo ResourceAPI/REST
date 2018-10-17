@@ -5,7 +5,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/ResourceAPI/REST/nodes"
+	"github.com/StratoAPI/REST/nodes"
 	"github.com/Vilsol/GoLib"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"

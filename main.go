@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/ResourceAPI/Interface/plugins"
-	"github.com/ResourceAPI/REST/server"
+	"github.com/StratoAPI/Interface/plugins"
+	"github.com/StratoAPI/REST/server"
 )
 
 type RESTPlugin string
