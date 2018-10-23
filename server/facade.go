@@ -1,8 +1,8 @@
 package server
 
 import (
+	"context"
 	"fmt"
-	"log"
 	"net/http"
 
 	"github.com/StratoAPI/REST/nodes"
@@ -13,6 +13,7 @@ import (
 
 type RESTFacade struct {
 	router http.Handler
+	server *http.Server
 }
 
 // Initialize the facade.
@@ -35,6 +36,9 @@ func (facade *RESTFacade) Initialize() error {
 
 	facade.router = finalRouter
 
+	// TODO Per-Plugin Configs
+	facade.server = &http.Server{Addr: fmt.Sprintf(":%d", 5020), Handler: facade.router}
+
 	return nil
 }
 
@@ -42,11 +46,11 @@ func (facade *RESTFacade) Initialize() error {
 func (facade *RESTFacade) Start() error {
 	// TODO Per-Plugin Configs
 	fmt.Printf("REST server listening on port %d\n", 5020)
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", 5020), facade.router))
+	facade.server.ListenAndServe()
 	return nil
 }
 
 // Graceful stopping of the facade with a 30s timeout.
 func (facade *RESTFacade) Stop() error {
-	return nil // TODO
+	return facade.server.Shutdown(context.Background())
 }
