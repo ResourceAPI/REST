@@ -30,6 +30,7 @@ var (
 	ErrorDeletingResource     = Error{Code: 7, Message: "error deleting resource: ", Status: 400}
 	ErrorCreatingResource     = Error{Code: 8, Message: "error creating resource: ", Status: 400}
 	ErrorUpdatingResource     = Error{Code: 9, Message: "error updating resource: ", Status: 400}
+	ErrorMiddleware           = Error{Code: 10, Message: "middleware error: ", Status: 400}
 )
 
 func PrepError(c echo.Context, err Error) error {

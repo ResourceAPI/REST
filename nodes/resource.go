@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/StratoAPI/Interface/filter"
+	"github.com/StratoAPI/Interface/middleware"
 	"github.com/StratoAPI/Interface/resource"
 	"github.com/StratoAPI/Interface/schema"
 	"github.com/labstack/echo"
@@ -23,6 +24,15 @@ func getResource(c echo.Context) error {
 		return PrepError(c, ErrorResourceDoesNotExist)
 	}
 
+	request := middleware.GetProcessor().Request(resourceName, c.Request().Header)
+
+	if request != nil {
+		resp := ErrorMiddleware
+		resp.Message += request.Message
+		resp.Status = request.Code
+		return PrepError(c, resp)
+	}
+
 	resultFilters, err := processFilters(c.QueryParams()["filters"])
 
 	if err != nil {
@@ -37,6 +47,15 @@ func getResource(c echo.Context) error {
 		return PrepError(c, resp)
 	}
 
+	resources, response := middleware.GetProcessor().Response(resourceName, c.Request().Header, resources)
+
+	if response != nil {
+		resp := ErrorMiddleware
+		resp.Message += response.Message
+		resp.Status = response.Code
+		return PrepError(c, resp)
+	}
+
 	return c.JSON(200, ResponseResource{
 		Success: true,
 		Data:    &resources,
@@ -48,6 +67,15 @@ func updateResource(c echo.Context) error {
 
 	if !schema.GetProcessor().ResourceExists(resourceName) {
 		return PrepError(c, ErrorResourceDoesNotExist)
+	}
+
+	request := middleware.GetProcessor().Request(resourceName, c.Request().Header)
+
+	if request != nil {
+		resp := ErrorMiddleware
+		resp.Message += request.Message
+		resp.Status = request.Code
+		return PrepError(c, resp)
 	}
 
 	resultFilters, err := processFilters(c.QueryParams()["filters"])
@@ -91,6 +119,15 @@ func storeResource(c echo.Context) error {
 
 	if !schema.GetProcessor().ResourceExists(resourceName) {
 		return PrepError(c, ErrorResourceDoesNotExist)
+	}
+
+	request := middleware.GetProcessor().Request(resourceName, c.Request().Header)
+
+	if request != nil {
+		resp := ErrorMiddleware
+		resp.Message += request.Message
+		resp.Status = request.Code
+		return PrepError(c, resp)
 	}
 
 	var rawData interface{}
@@ -150,6 +187,15 @@ func deleteResource(c echo.Context) error {
 
 	if !schema.GetProcessor().ResourceExists(resourceName) {
 		return PrepError(c, ErrorResourceDoesNotExist)
+	}
+
+	request := middleware.GetProcessor().Request(resourceName, c.Request().Header)
+
+	if request != nil {
+		resp := ErrorMiddleware
+		resp.Message += request.Message
+		resp.Status = request.Code
+		return PrepError(c, resp)
 	}
 
 	resultFilters, err := processFilters(c.QueryParams()["filters"])

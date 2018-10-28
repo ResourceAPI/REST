@@ -1,7 +1,7 @@
 module github.com/StratoAPI/REST
 
 require (
-	github.com/StratoAPI/Interface v0.0.8
+	github.com/StratoAPI/Interface v0.0.11
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
 	github.com/labstack/echo v3.2.1+incompatible
