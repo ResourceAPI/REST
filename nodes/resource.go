@@ -2,35 +2,31 @@ package nodes
 
 import (
 	"encoding/json"
-	"io/ioutil"
-	"net/http"
-
+	"fmt"
 	"github.com/StratoAPI/Interface/filter"
 	"github.com/StratoAPI/Interface/resource"
 	"github.com/StratoAPI/Interface/schema"
-
-	"github.com/Vilsol/GoLib"
-	"github.com/gorilla/mux"
+	"github.com/labstack/echo"
 )
 
-func RegisterResourceRoutes(router GoLib.RegisterRoute) {
-	router("GET", "/resource/{resource}", getResource)
-	router("PUT", "/resource/{resource}", updateResource)
-	router("POST", "/resource/{resource}", storeResource)
-	router("DELETE", "/resource/{resource}", deleteResource)
+func RegisterResourceRoutes(router *echo.Group) {
+	router.GET("/resource/:resource", getResource)
+	router.PUT("/resource/:resource", updateResource)
+	router.POST("/resource/:resource", storeResource)
+	router.DELETE("/resource/:resource", deleteResource)
 }
 
-func getResource(r *http.Request) (interface{}, *GoLib.ErrorResponse) {
-	resourceName := mux.Vars(r)["resource"]
+func getResource(c echo.Context) error {
+	resourceName := c.Param("resource")
 
 	if !schema.GetProcessor().ResourceExists(resourceName) {
-		return nil, &ErrorResourceDoesNotExist
+		return PrepError(c, ErrorResourceDoesNotExist)
 	}
 
-	resultFilters, err := processFilters(r.URL.Query()["filters"])
+	resultFilters, err := processFilters(c.QueryParams()["filters"])
 
 	if err != nil {
-		return nil, err
+		return PrepError(c, *err)
 	}
 
 	resources, errG := resource.GetProcessor().GetResources(resourceName, resultFilters)
@@ -38,137 +34,128 @@ func getResource(r *http.Request) (interface{}, *GoLib.ErrorResponse) {
 	if errG != nil {
 		resp := ErrorFetchingResource
 		resp.Message += errG.Error()
-		return nil, &resp
+		return PrepError(c, resp)
 	}
 
-	return resources, nil
+	return c.JSON(200, ResponseResource{
+		Success: true,
+		Data:    &resources,
+	})
 }
 
-func updateResource(r *http.Request) (interface{}, *GoLib.ErrorResponse) {
-	resourceName := mux.Vars(r)["resource"]
+func updateResource(c echo.Context) error {
+	resourceName := c.Param("resource")
 
 	if !schema.GetProcessor().ResourceExists(resourceName) {
-		return nil, &ErrorResourceDoesNotExist
+		return PrepError(c, ErrorResourceDoesNotExist)
 	}
 
-	resultFilters, err := processFilters(r.URL.Query()["filters"])
+	resultFilters, err := processFilters(c.QueryParams()["filters"])
 
 	if err != nil {
-		return nil, err
+		return PrepError(c, *err)
 	}
 
-	body, errG := ioutil.ReadAll(r.Body)
+	var rawData map[string]interface{}
+	errG := c.Bind(&rawData)
+
 	if errG != nil {
-		return nil, &ErrorCouldNotReadBody
+		resp := ErrorCouldNotReadBody
+		resp.Message += fmt.Sprintf("%s", errG.(*echo.HTTPError).Message)
+		return PrepError(c, resp)
 	}
 
-	valid, errG := schema.GetProcessor().ResourceValid(resourceName, string(body), false)
+	valid, errG := schema.GetProcessor().ResourceValidGo(resourceName, rawData, false)
 
 	if !valid {
 		resp := ErrorResourceInvalid
 		resp.Message += errG.Error()
-		return nil, &resp
+		return PrepError(c, resp)
 	}
 
-	var data map[string]interface{}
-	errG = json.Unmarshal(body, &data)
-
-	if errG != nil {
-		resp := ErrorResourceInvalid
-		resp.Message += errG.Error()
-		return nil, &resp
-	}
-
-	errG = resource.GetProcessor().UpdateResources(resourceName, data, resultFilters)
+	errG = resource.GetProcessor().UpdateResources(resourceName, rawData, resultFilters)
 
 	if errG != nil {
 		resp := ErrorUpdatingResource
 		resp.Message += errG.Error()
-		return nil, &resp
+		return PrepError(c, resp)
 	}
 
-	return nil, nil
+	return c.JSON(200, Response{
+		Success: true,
+	})
 }
 
-func storeResource(r *http.Request) (interface{}, *GoLib.ErrorResponse) {
-	resourceName := mux.Vars(r)["resource"]
+func storeResource(c echo.Context) error {
+	resourceName := c.Param("resource")
 
 	if !schema.GetProcessor().ResourceExists(resourceName) {
-		return nil, &ErrorResourceDoesNotExist
+		return PrepError(c, ErrorResourceDoesNotExist)
 	}
 
-	body, err := ioutil.ReadAll(r.Body)
+	var rawData interface{}
+	err := c.Bind(&rawData)
+
 	if err != nil {
-		return nil, &ErrorCouldNotReadBody
+		resp := ErrorCouldNotReadBody
+		resp.Message += fmt.Sprintf("%s", err.(*echo.HTTPError).Message)
+		return PrepError(c, resp)
 	}
 
 	finalResources := make([]map[string]interface{}, 0)
 
-	if body[0] == '[' {
-		var data []map[string]interface{}
-		err := json.Unmarshal(body, &data)
-
-		if err != nil {
-			resp := ErrorResourceInvalid
-			resp.Message += err.Error()
-			return nil, &resp
-		}
-
-		for _, d := range data {
+	if arrData, ok := rawData.([]map[string]interface{}); ok {
+		for _, d := range arrData {
 			valid, err := schema.GetProcessor().ResourceValidGo(resourceName, d, true)
 
 			if !valid {
 				resp := ErrorResourceInvalid
 				resp.Message += err.Error()
-				return nil, &resp
+				return PrepError(c, resp)
 			}
 
 			finalResources = append(finalResources, d)
 		}
-	} else {
-		valid, err := schema.GetProcessor().ResourceValid(resourceName, string(body), true)
+	} else if singleData, ok := rawData.(map[string]interface{}); ok {
+		valid, err := schema.GetProcessor().ResourceValidGo(resourceName, singleData, true)
 
 		if !valid {
 			resp := ErrorResourceInvalid
 			resp.Message += err.Error()
-			return nil, &resp
+			return PrepError(c, resp)
 		}
 
-		var data map[string]interface{}
-
-		err = json.Unmarshal(body, &data)
-
-		if err != nil {
-			resp := ErrorResourceInvalid
-			resp.Message += err.Error()
-			return nil, &resp
-		}
-
-		finalResources = append(finalResources, data)
+		finalResources = append(finalResources, singleData)
+	} else {
+		resp := ErrorCouldNotReadBody
+		resp.Message += "not of type object or array of object"
+		return PrepError(c, resp)
 	}
 
-	errG := (*resource.GetProcessor().GetStore(resourceName)).CreateResources(resourceName, finalResources)
-
-	if errG != nil {
-		resp := ErrorCreatingResource
-		resp.Message += errG.Error()
-		return nil, &resp
-	}
-
-	return nil, nil
-}
-
-func deleteResource(r *http.Request) (interface{}, *GoLib.ErrorResponse) {
-	resourceName := mux.Vars(r)["resource"]
-
-	if !schema.GetProcessor().ResourceExists(resourceName) {
-		return nil, &ErrorResourceDoesNotExist
-	}
-
-	resultFilters, err := processFilters(r.URL.Query()["filters"])
+	err = (*resource.GetProcessor().GetStore(resourceName)).CreateResources(resourceName, finalResources)
 
 	if err != nil {
-		return nil, err
+		resp := ErrorCreatingResource
+		resp.Message += err.Error()
+		return PrepError(c, resp)
+	}
+
+	return c.JSON(200, Response{
+		Success: true,
+	})
+}
+
+func deleteResource(c echo.Context) error {
+	resourceName := c.Param("resource")
+
+	if !schema.GetProcessor().ResourceExists(resourceName) {
+		return PrepError(c, ErrorResourceDoesNotExist)
+	}
+
+	resultFilters, err := processFilters(c.QueryParams()["filters"])
+
+	if err != nil {
+		return PrepError(c, *err)
 	}
 
 	errG := resource.GetProcessor().DeleteResources(resourceName, resultFilters)
@@ -176,13 +163,15 @@ func deleteResource(r *http.Request) (interface{}, *GoLib.ErrorResponse) {
 	if errG != nil {
 		resp := ErrorDeletingResource
 		resp.Message += errG.Error()
-		return nil, &resp
+		return PrepError(c, resp)
 	}
 
-	return nil, nil
+	return c.JSON(200, Response{
+		Success: true,
+	})
 }
 
-func processFilters(filters []string) ([]filter.ProcessedFilter, *GoLib.ErrorResponse) {
+func processFilters(filters []string) ([]filter.ProcessedFilter, *Error) {
 	resultFilters := make([]filter.ProcessedFilter, 0)
 	for _, f := range filters {
 		var objFilter filter.EncodedFilter
