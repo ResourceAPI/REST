@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/StratoAPI/Interface/plugins"
+	"github.com/StratoAPI/REST/config"
 	"github.com/StratoAPI/REST/server"
 )
 
@@ -13,6 +14,7 @@ func (RESTPlugin) Name() string {
 
 func (RESTPlugin) Entrypoint() {
 	plugins.GetRegistry().RegisterFacade("REST", &server.RESTFacade{})
+	plugins.GetRegistry().RegisterConfig("rest", config.Get())
 }
 
 var CorePlugin RESTPlugin

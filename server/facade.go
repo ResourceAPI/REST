@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"fmt"
+	"github.com/StratoAPI/REST/config"
 	"net/http"
 
 	"github.com/StratoAPI/REST/nodes"
@@ -56,9 +57,8 @@ func customHTTPErrorHandler(err error, c echo.Context) {
 
 // Start the facade. Must be a blocking call.
 func (facade *RESTFacade) Start() error {
-	// TODO Per-Plugin Configs
-	fmt.Printf("REST server listening on port %d\n", 5020)
-	facade.echo.Start(fmt.Sprintf(":%d", 5020))
+	fmt.Printf("REST server listening on port %d\n", config.Get().Config.Port)
+	facade.echo.Start(fmt.Sprintf("%s:%d", config.Get().Config.Host, config.Get().Config.Port))
 	return nil
 }
 
